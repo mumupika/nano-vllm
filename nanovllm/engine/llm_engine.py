@@ -51,13 +51,11 @@ class LLMEngine:
         if not is_prefill:
             # The end of the prefill mode. Get TTFT.
             if Observer.ttft_start != 0:
-                Observer.ttft_end = perf_counter_ns()
-                Observer.ttft = Observer.ttft_end - Observer.ttft_start
+                Observer.ttft = perf_counter_ns() - Observer.ttft_start
                 Observer.reset_ttft()
             # The start of the decode mode. Get TPOT.
             if Observer.tpot_start != 0:
-                Observer.tpot_end = perf_counter_ns()
-                Observer.tpot = Observer.tpot_end - Observer.tpot_start
+                Observer.tpot = perf_counter_ns() - Observer.tpot_start
             Observer.tpot_start = perf_counter_ns()
         token_ids = self.model_runner.call("run", seqs, is_prefill)
         self.scheduler.postprocess(seqs, token_ids)
