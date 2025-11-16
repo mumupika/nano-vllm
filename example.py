@@ -1,7 +1,6 @@
 import os
 from nanovllm import LLM, SamplingParams
 from transformers import AutoTokenizer
-import pyinstrument
 
 def main():
     path = os.path.expanduser("~/huggingface/Qwen3-0.6B/")
@@ -11,10 +10,7 @@ def main():
     sampling_params = SamplingParams(temperature=0.6, max_tokens=256)
     prompts = [
         "introduce yourself",
-        "list all prime numbers within 100",
-        "Can you tell me the capital of China?",
-        "What is the limit of (1+\\dfrac{1}{n})^{n} when n apporoaches infinite?",
-        "Compare yourself to deepseek."
+        "list all prime numbers within 100"
     ]
     prompts = [
         tokenizer.apply_chat_template(

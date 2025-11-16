@@ -48,7 +48,7 @@ class LLMEngine:
 
     def step(self):
         seqs, is_prefill = self.scheduler.schedule()
-        if is_prefill is False:
+        if not is_prefill:
             # The end of the prefill mode. Get TTFT.
             if Observer.ttft_start != 0:
                 Observer.ttft_end = perf_counter_ns()
@@ -74,6 +74,7 @@ class LLMEngine:
         sampling_params: SamplingParams | list[SamplingParams],
         use_tqdm: bool = True,
     ) -> list[str]:
+        Observer.complete_reset()
         if use_tqdm:
             pbar = tqdm(total=len(prompts), desc="Generating", dynamic_ncols=True)
         if not isinstance(sampling_params, list):
@@ -101,7 +102,7 @@ class LLMEngine:
                 if use_tqdm:
                     pbar.update(1)
         outputs = [outputs[seq_id] for seq_id in sorted(outputs.keys())]
-        outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids, "ttft": Observer.ttft} for token_ids in outputs]
+        outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids} for token_ids in outputs]
         if use_tqdm:
             pbar.close()
         return outputs

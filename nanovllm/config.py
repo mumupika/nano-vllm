@@ -5,17 +5,17 @@ from transformers import AutoConfig
 
 @dataclass
 class Config:
-    model: str                                  # The model path.
-    max_num_batched_tokens: int = 16384         # Maximum number of tokens to be processed in a single iteration.
-    max_num_seqs: int = 512                     # Maximum number of sequences to be processed in a single iteration.
-    max_model_len: int = 4096                   # Model context length (prompt and output).
-    gpu_memory_utilization: float = 0.9         # The fraction of GPU memory to be used for the model executor.
-    tensor_parallel_size: int = 1               # tensor parallel dim. See megatron's essay.
-    enforce_eager: bool = False                 # Whether use eager mode(one line after one line) or graph mode of pytorch.
+    model: str                         
+    max_num_batched_tokens: int = 16384
+    max_num_seqs: int = 512            
+    max_model_len: int = 4096          
+    gpu_memory_utilization: float = 0.9
+    tensor_parallel_size: int = 1      
+    enforce_eager: bool = False        
     hf_config: AutoConfig | None = None
-    eos: int = -1                               # end of sequence token.
-    kvcache_block_size: int = 256               # The size of each kvcache.
-    num_kvcache_blocks: int = -1                # The numbers of kvcache blocks.
+    eos: int = -1                      
+    kvcache_block_size: int = 256      
+    num_kvcache_blocks: int = -1       
 
     def __post_init__(self):
         assert os.path.isdir(self.model)
