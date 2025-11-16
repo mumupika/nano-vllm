@@ -1,6 +1,6 @@
 import atexit
 from dataclasses import fields
-from time import perf_counter
+from time import perf_counter, perf_counter_ns
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer
 import torch.multiprocessing as mp
@@ -10,6 +10,7 @@ from nanovllm.sampling_params import SamplingParams
 from nanovllm.engine.sequence import Sequence
 from nanovllm.engine.scheduler import Scheduler
 from nanovllm.engine.model_runner import ModelRunner
+from nanovllm.utils.observer import Observer
 
 
 class LLMEngine:
@@ -47,6 +48,17 @@ class LLMEngine:
 
     def step(self):
         seqs, is_prefill = self.scheduler.schedule()
+        if is_prefill is False:
+            # The end of the prefill mode. Get TTFT.
+            if Observer.ttft_start != 0:
+                Observer.ttft_end = perf_counter_ns()
+                Observer.ttft = Observer.ttft_end - Observer.ttft_start
+                Observer.reset_ttft()
+            # The start of the decode mode. Get TPOT.
+            if Observer.tpot_start != 0:
+                Observer.tpot_end = perf_counter_ns()
+                Observer.tpot = Observer.tpot_end - Observer.tpot_start
+            Observer.tpot_start = perf_counter_ns()
         token_ids = self.model_runner.call("run", seqs, is_prefill)
         self.scheduler.postprocess(seqs, token_ids)
         outputs = [(seq.seq_id, seq.completion_token_ids) for seq in seqs if seq.is_finished]
@@ -81,13 +93,15 @@ class LLMEngine:
                 pbar.set_postfix({
                     "Prefill": f"{int(prefill_throughput)}tok/s",
                     "Decode": f"{int(decode_throughput)}tok/s",
+                    "ttft": f"{float(Observer.ttft) / 1e6}ms",
+                    "tpot": f"{float(Observer.tpot) / 1e6}ms",
                 })
             for seq_id, token_ids in output:
                 outputs[seq_id] = token_ids
                 if use_tqdm:
                     pbar.update(1)
         outputs = [outputs[seq_id] for seq_id in sorted(outputs.keys())]
-        outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids} for token_ids in outputs]
+        outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids, "ttft": Observer.ttft} for token_ids in outputs]
         if use_tqdm:
             pbar.close()
         return outputs
